@@ -1,0 +1,146 @@
+{
+  "name": "kafka_broker_failure_causing_partition_unavailability",
+  "description": "This incident type refers to a situation where the Kafka broker, which is responsible for managing and storing messages in a Kafka cluster, has failed. This failure results in the unavailability of one or more partitions, which are used to distribute messages across the cluster. As a result, messages cannot be sent or received, leading to disruptions in the system's operations. This type of incident requires immediate attention to restore the Kafka broker and ensure that messages can be processed as expected.",
+  "params": [
+    {
+      "name": "PATH_TO_KAFKA_INSTALLATION",
+      "value": ""
+    },
+    {
+      "name": "KAFKA_BROKER",
+      "value": ""
+    },
+    {
+      "name": "ZOOKEEPER_HOST",
+      "value": ""
+    },
+    {
+      "name": "PATH_TO_BROKER_LOGS_DIRECTORY",
+      "value": ""
+    },
+    {
+      "name": "PORT",
+      "value": ""
+    },
+    {
+      "name": "NUMBER_OF_ADDITIONAL_BROKERS_TO_ADD",
+      "value": ""
+    },
+    {
+      "name": "HOST_NAME",
+      "value": ""
+    },
+    {
+      "name": "K8S_CLUSTER_NAME",
+      "value": ""
+    },
+    {
+      "name": "NAMESPACE",
+      "value": ""
+    }
+  ],
+  "cells": [
+    {
+      "name": "cell_1",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Kafka Broker Failure Causing Partition Unavailability\nThis incident type refers to a situation where the Kafka broker, which is responsible for managing and storing messages in a Kafka cluster, has failed. This failure results in the unavailability of one or more partitions, which are used to distribute messages across the cluster. As a result, messages cannot be sent or received, leading to disruptions in the system's operations. This type of incident requires immediate attention to restore the Kafka broker and ensure that messages can be processed as expected."
+    },
+    {
+      "name": "cell_2",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if Kafka broker is running"
+    },
+    {
+      "name": "cell_3",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `systemctl status kafka`"
+    },
+    {
+      "name": "cell_4",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if all Kafka partitions are available"
+    },
+    {
+      "name": "cell_5",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `kafka-topics --bootstrap-server ${KAFKA_BROKER}:${PORT} --describe`"
+    },
+    {
+      "name": "cell_6",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any disk space issues"
+    },
+    {
+      "name": "cell_7",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `df -h`"
+    },
+    {
+      "name": "cell_8",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any issues with Zookeeper"
+    },
+    {
+      "name": "cell_9",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `zkCli.sh -server ${ZOOKEEPER_HOST}:${PORT} ls /brokers/ids`"
+    },
+    {
+      "name": "cell_10",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any errors in Kafka logs"
+    },
+    {
+      "name": "cell_11",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `journalctl -u kafka.service`"
+    },
+    {
+      "name": "cell_12",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Check if there are any network issues between Kafka brokers"
+    },
+    {
+      "name": "cell_13",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "(host | host_name=$HOST_NAME) union (pod | k8s_cluster_name=$K8S_CLUSTER_NAME | namespace=$NAMESPACE) | `ping ${KAFKA_BROKER}`"
+    },
+    {
+      "name": "cell_14",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Resource exhaustion due to high traffic or large message sizes"
+    },
+    {
+      "name": "cell_15",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_check_kafka_metrics($PATH_TO_KAFKA_INSTALLATION, $PATH_TO_BROKER_LOGS_DIRECTORY)"
+    },
+    {
+      "name": "cell_16",
+      "type": "MARKDOWN",
+      "enabled": true,
+      "content": "## Increase the number of Kafka brokers in the cluster to ensure that there are enough replicas and that the cluster can handle the required load."
+    },
+    {
+      "name": "cell_17",
+      "type": "OP_LANG",
+      "enabled": true,
+      "content": "host | host_name=$HOST_NAME | invoke_update_kafka_server_config($PATH_TO_KAFKA_INSTALLATION, $NUMBER_OF_ADDITIONAL_BROKERS_TO_ADD)"
+    }
+  ]
+}
